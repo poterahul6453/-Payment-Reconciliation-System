@@ -1,9 +1,12 @@
 import axios from 'axios'
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+export const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(
+  /\/+$/,
+  '',
+)
 
 export const api = axios.create({
-  baseURL,
+  baseURL: apiBaseUrl,
   headers: { 'Content-Type': 'application/json' },
 })
 
@@ -13,6 +16,34 @@ export const uploadFile = (endpoint, file) => {
   return api.post(endpoint, form, {
     headers: { 'Content-Type': 'multipart/form-data' },
   })
+}
+
+export function buildApiUrl(path, params = {}) {
+  const url = new URL(path.startsWith('/') ? path : `/${path}`, `${apiBaseUrl}/`)
+  Object.entries(params).forEach(([key, value]) => {
+    if (value != null && value !== '') url.searchParams.set(key, value)
+  })
+  return url.toString()
+}
+
+export async function downloadExport(path, params, filename) {
+  const res = await fetch(buildApiUrl(path, params))
+  if (!res.ok) {
+    let detail = res.statusText
+    try {
+      const body = await res.json()
+      detail = body.detail ?? detail
+    } catch {
+      /* non-JSON error body */
+    }
+    throw new Error(detail || `Download failed (${res.status})`)
+  }
+  const blob = await res.blob()
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  link.download = filename
+  link.click()
+  URL.revokeObjectURL(link.href)
 }
 
 export const loadSampleData = () => api.post('/upload/sample-data')

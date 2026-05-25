@@ -27,14 +27,29 @@ async def get_report_by_id(session: AsyncSession, report_id: str) -> Reconciliat
     return result.scalar_one_or_none()
 
 
+def resolve_report_json_path(report: ReconciliationReport) -> Path | None:
+    """Find report JSON on disk; tolerates stale absolute paths after redeploy."""
+    candidates: list[Path] = []
+    if report.report_json_path:
+        stored = Path(report.report_json_path)
+        candidates.append(stored)
+        if not stored.is_absolute():
+            candidates.append(settings.reports_path / stored)
+    candidates.append(settings.reports_path / report.report_id / "reconciliation_report.json")
+    for path in candidates:
+        if path.exists():
+            return path.resolve()
+    return None
+
+
+def resolve_report_csv_path(report: ReconciliationReport, filename: str) -> Path | None:
+    path = settings.reports_path / report.report_id / filename
+    return path.resolve() if path.exists() else None
+
+
 def load_report_json(report: ReconciliationReport) -> dict[str, Any] | None:
-    if not report.report_json_path:
-        return None
-    path = Path(report.report_json_path)
-    if not path.exists():
-        alt = settings.reports_path / report.report_id / "reconciliation_report.json"
-        path = alt if alt.exists() else path
-    if not path.exists():
+    path = resolve_report_json_path(report)
+    if not path:
         return None
     with open(path) as f:
         return json.load(f)

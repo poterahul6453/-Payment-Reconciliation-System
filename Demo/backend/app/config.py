@@ -6,7 +6,7 @@ _BACKEND_ROOT = Path(__file__).resolve().parent.parent
 
 class Settings(BaseSettings):
     database_url: str = "sqlite+aiosqlite:///./reconciliation.db"
-    reports_dir: str = "../reports"
+    reports_dir: str = ""
     uploads_dir: str = "../uploads"
     sample_data_dir: str = ""
     tolerance: float = 0.01
@@ -22,7 +22,21 @@ class Settings(BaseSettings):
 
     @property
     def reports_path(self) -> Path:
-        return Path(self.reports_dir).resolve()
+        candidates: list[Path] = []
+        if self.reports_dir.strip():
+            candidates.append(Path(self.reports_dir).resolve())
+        candidates.extend(
+            (
+                _BACKEND_ROOT / "reports",
+                _BACKEND_ROOT.parent / "reports",
+            )
+        )
+        for path in candidates:
+            if path.is_dir():
+                return path.resolve()
+        bundled = (_BACKEND_ROOT / "reports").resolve()
+        bundled.mkdir(parents=True, exist_ok=True)
+        return bundled
 
     @property
     def uploads_path(self) -> Path:

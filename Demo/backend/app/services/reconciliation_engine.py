@@ -448,7 +448,7 @@ class ReconciliationEngine:
             duplicate_count=summary["duplicate_count"],
             orphan_refund_count=summary["orphan_refund_count"],
             reconciliation_health_score=Decimal(str(summary["reconciliation_health_score"])),
-            report_json_path=str(json_path),
+            report_json_path=f"{self.report_id}/reconciliation_report.json",
         )
         self.session.add(db_report)
         await self.session.flush()

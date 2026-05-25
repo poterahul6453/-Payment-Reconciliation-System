@@ -1,14 +1,26 @@
 import { useEffect, useState } from 'react'
-import { getDashboardSummary } from '../api/client'
-
-const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+import { downloadExport, getDashboardSummary } from '../api/client'
 
 export default function Reports() {
   const [report, setReport] = useState(null)
+  const [error, setError] = useState(null)
+  const [downloading, setDownloading] = useState(null)
 
   useEffect(() => {
     getDashboardSummary().then((r) => setReport(r.data.latest_report)).catch(console.error)
   }, [])
+
+  const handleDownload = async (key, path, params, filename) => {
+    setError(null)
+    setDownloading(key)
+    try {
+      await downloadExport(path, params, filename)
+    } catch (e) {
+      setError(e.message || 'Download failed')
+    } finally {
+      setDownloading(null)
+    }
+  }
 
   if (!report) {
     return (
@@ -17,6 +29,8 @@ export default function Reports() {
       </p>
     )
   }
+
+  const reportId = report.report_id
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -35,35 +49,63 @@ export default function Reports() {
 
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
         <h3 className="font-medium text-white mb-4">Export Reports</h3>
+        {error && <p className="text-fintech-danger text-sm mb-3">{error}</p>}
         <div className="flex flex-wrap gap-3">
-          <a
-            href={`${API}/export/report/json?report_id=${report.report_id}`}
-            className="px-4 py-2 bg-slate-800 rounded-lg text-sm hover:bg-slate-700"
-            download
+          <button
+            type="button"
+            disabled={!!downloading}
+            onClick={() =>
+              handleDownload('json', '/export/report/json', { report_id: reportId }, 'reconciliation_report.json')
+            }
+            className="px-4 py-2 bg-slate-800 rounded-lg text-sm hover:bg-slate-700 disabled:opacity-50"
           >
-            Download JSON
-          </a>
-          <a
-            href={`${API}/export/report/csv?report_type=mismatch&report_id=${report.report_id}`}
-            className="px-4 py-2 bg-slate-800 rounded-lg text-sm hover:bg-slate-700"
-            download
+            {downloading === 'json' ? 'Downloading…' : 'Download JSON'}
+          </button>
+          <button
+            type="button"
+            disabled={!!downloading}
+            onClick={() =>
+              handleDownload(
+                'mismatch',
+                '/export/report/csv',
+                { report_type: 'mismatch', report_id: reportId },
+                'mismatch_report.csv',
+              )
+            }
+            className="px-4 py-2 bg-slate-800 rounded-lg text-sm hover:bg-slate-700 disabled:opacity-50"
           >
-            Mismatch CSV
-          </a>
-          <a
-            href={`${API}/export/report/csv?report_type=duplicate&report_id=${report.report_id}`}
-            className="px-4 py-2 bg-slate-800 rounded-lg text-sm hover:bg-slate-700"
-            download
+            {downloading === 'mismatch' ? 'Downloading…' : 'Mismatch CSV'}
+          </button>
+          <button
+            type="button"
+            disabled={!!downloading}
+            onClick={() =>
+              handleDownload(
+                'duplicate',
+                '/export/report/csv',
+                { report_type: 'duplicate', report_id: reportId },
+                'duplicate_report.csv',
+              )
+            }
+            className="px-4 py-2 bg-slate-800 rounded-lg text-sm hover:bg-slate-700 disabled:opacity-50"
           >
-            Duplicate CSV
-          </a>
-          <a
-            href={`${API}/export/report/csv?report_type=orphan&report_id=${report.report_id}`}
-            className="px-4 py-2 bg-slate-800 rounded-lg text-sm hover:bg-slate-700"
-            download
+            {downloading === 'duplicate' ? 'Downloading…' : 'Duplicate CSV'}
+          </button>
+          <button
+            type="button"
+            disabled={!!downloading}
+            onClick={() =>
+              handleDownload(
+                'orphan',
+                '/export/report/csv',
+                { report_type: 'orphan', report_id: reportId },
+                'orphan_refund_report.csv',
+              )
+            }
+            className="px-4 py-2 bg-slate-800 rounded-lg text-sm hover:bg-slate-700 disabled:opacity-50"
           >
-            Orphan Refund CSV
-          </a>
+            {downloading === 'orphan' ? 'Downloading…' : 'Orphan Refund CSV'}
+          </button>
         </div>
       </div>
     </div>
