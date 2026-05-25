@@ -9,7 +9,10 @@ class Settings(BaseSettings):
     sample_data_dir: str = "../sample_data"
     tolerance: float = 0.01
     log_level: str = "INFO"
-    cors_origins: str = "http://localhost:5173,http://localhost:3000"
+    cors_origins: str = (
+        "http://localhost:5173,http://localhost:3000,"
+        "https://payment-reconciliation-system.vercel.app"
+    )
 
     @property
     def cors_origin_list(self) -> list[str]:
