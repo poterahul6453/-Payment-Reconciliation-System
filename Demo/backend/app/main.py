@@ -33,10 +33,12 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-app.add_middleware(LoggingMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origin_list,
+    allow_origins=[
+        "http://localhost:5173",
+        "https://payment-reconciliation-system.vercel.app/"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
