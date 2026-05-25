@@ -1,50 +1,13 @@
-services:
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: recon
-      POSTGRES_PASSWORD: recon
-      POSTGRES_DB: reconciliation
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U recon -d reconciliation"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+FROM python:3.11-slim
 
-  backend:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
-    ports:
-      - "8000:8000"
-    environment:
-      DATABASE_URL: postgresql+asyncpg://recon:recon@postgres:5432/reconciliation
-      REPORTS_DIR: /app/reports
-      UPLOADS_DIR: /app/uploads
-      SAMPLE_DATA_DIR: /app/sample_data
-      CORS_ORIGINS: http://localhost:5173,http://localhost:3000
-    volumes:
-      - ./reports:/app/reports
-      - ./uploads:/app/uploads
-      - ./sample_data:/app/sample_data
-    depends_on:
-      postgres:
-        condition: service_healthy
+WORKDIR /app
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    ports:
-      - "5173:5173"
-    environment:
-      VITE_API_BASE_URL: http://localhost:8000
-    depends_on:
-      - backend
+COPY backend/requirements.txt .
 
-volumes:
-  pgdata:
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY backend/ .
+
+RUN mkdir -p reports uploads sample_data
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
