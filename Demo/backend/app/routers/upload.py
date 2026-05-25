@@ -64,7 +64,7 @@ async def upload_refunds(
 
 @router.post("/sample-data", response_model=dict)
 async def load_sample_data(session: AsyncSession = Depends(get_db)):
-    sample_dir = Path(settings.sample_data_dir).resolve()
+    sample_dir = settings.sample_data_path
     if not sample_dir.exists():
         raise HTTPException(status_code=404, detail="Sample data directory not found")
     try:
