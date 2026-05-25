@@ -47,6 +47,21 @@ export async function downloadExport(path, params, filename) {
 }
 
 export const loadSampleData = () => api.post('/upload/sample-data')
+
+const SAMPLE_CSV_FILENAMES = {
+  transactions: 'transactions.csv',
+  settlements: 'settlements.csv',
+  refunds: 'refunds.csv',
+}
+
+export const downloadSampleCsv = (dataset) =>
+  downloadExport(`/upload/sample-data/download/${dataset}`, {}, SAMPLE_CSV_FILENAMES[dataset])
+
+export const downloadSampleTemplate = (dataset) =>
+  downloadExport(`/upload/sample-data/template/${dataset}`, {}, `${dataset}_template.csv`)
+
+export const downloadAllSampleCsv = () =>
+  downloadExport('/upload/sample-data/download/all', {}, 'sample_data.zip')
 export const runReconcile = () => api.post('/reconcile/run')
 export const runReconcileSync = () => api.post('/reconcile/run-sync')
 export const getReport = (id) => api.get(`/reconcile/report/${id}`)
